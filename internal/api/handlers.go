@@ -3,10 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"os"
+	"path/filepath"
 
 	"github.com/gorilla/websocket"
 	"github.com/yourusername/pg_migrate_tool/internal/backup"
@@ -14,8 +18,6 @@ import (
 	"github.com/yourusername/pg_migrate_tool/internal/jobs"
 	"github.com/yourusername/pg_migrate_tool/internal/models"
 	"github.com/yourusername/pg_migrate_tool/internal/restore"
-	"os"
-	"path/filepath"
 )
 
 func json200(w http.ResponseWriter, v any) {
@@ -55,10 +57,10 @@ func HandleTestConn(w http.ResponseWriter, r *http.Request) {
 	hasTS, tsVer, _ := db.DetectTimescale(req.Host, req.Port, req.User, req.Password, req.DB)
 
 	json200(w, map[string]any{
-		"ok":             true,
-		"version":        version,
-		"has_timescale":  hasTS,
-		"timescale_ver":  tsVer,
+		"ok":            true,
+		"version":       version,
+		"has_timescale": hasTS,
+		"timescale_ver": tsVer,
 	})
 }
 
@@ -114,7 +116,8 @@ func HandleBackup(w http.ResponseWriter, r *http.Request) {
 		req.Compress = 6
 	}
 	if req.OutputFile == "" {
-		req.OutputFile = backup.GenerateFilename(req.DB, req.Schema, req.Timescale)
+		fname := backup.GenerateFilename(req.DB, req.Schema, req.Timescale)
+		req.OutputFile = filepath.Join("backups", fname)
 	}
 
 	job := jobs.Global.New("backup", req.DB, req.Schema, req.OutputFile)
@@ -135,9 +138,10 @@ func HandleBackup(w http.ResponseWriter, r *http.Request) {
 		}
 		job.AddLog("info", fmt.Sprintf("Backup dimulai: db=%s schema=%s file=%s", req.DB, req.Schema, req.OutputFile))
 		if err := backup.Run(cfg, job); err != nil {
-			job.AddLog("error", err.Error())
+			job.AddLog("error", "Backup GAGAL: "+err.Error())
 			job.Finish(false)
 		} else {
+			job.AddLog("success", "Job Backup selesai: File berhasil dibuat")
 			job.Finish(true)
 		}
 	}()
@@ -186,9 +190,10 @@ func HandleRestore(w http.ResponseWriter, r *http.Request) {
 		}
 		job.AddLog("info", fmt.Sprintf("Restore dimulai: file=%s → db=%s", req.File, req.DB))
 		if err := restore.Run(cfg, job); err != nil {
-			job.AddLog("error", err.Error())
+			job.AddLog("error", "Restore GAGAL: "+err.Error())
 			job.Finish(false)
 		} else {
+			job.AddLog("success", "Job Restore selesai: Database telah dipulihkan")
 			job.Finish(true)
 		}
 	}()
@@ -216,6 +221,60 @@ func HandleJobStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json200(w, job)
+}
+
+// GET /api/download?file=path
+func HandleDownload(w http.ResponseWriter, r *http.Request) {
+	cors(w)
+	file := r.URL.Query().Get("file")
+	if file == "" {
+		http.Error(w, "file parameter diperlukan", 400)
+		return
+	}
+
+	// Keamanan: pastikan file hanya dari backups atau current dir
+	base := filepath.Base(file)
+	path := filepath.Join("backups", base)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		path = base // coba di root jika tidak ada di backups
+	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", base))
+	http.ServeFile(w, r, path)
+}
+
+// POST /api/upload
+func HandleUpload(w http.ResponseWriter, r *http.Request) {
+	cors(w)
+	if r.Method == http.MethodOptions {
+		return
+	}
+
+	// Limit 2GB
+	r.ParseMultipartForm(2000 << 20)
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		jsonErr(w, 400, "gagal membaca file: "+err.Error())
+		return
+	}
+	defer file.Close()
+
+	os.MkdirAll("backups", 0755)
+	dstPath := filepath.Join("backups", header.Filename)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		jsonErr(w, 500, "gagal membuat file tujuan: "+err.Error())
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		jsonErr(w, 500, "gagal menyimpan file: "+err.Error())
+		return
+	}
+
+	json200(w, map[string]string{"message": "file berhasil diunggah", "path": dstPath})
 }
 
 // GET /api/list-files

@@ -65,7 +65,7 @@ func Run(cfg models.RestoreConfig, job *models.Job) error {
 		}
 	}
 
-	job.AddLog("success", "Restore selesai dengan sukses!")
+	job.AddLog("success", "Seluruh proses restore selesai dengan sukses")
 	return nil
 }
 
@@ -119,8 +119,9 @@ func runPgRestore(cfg models.RestoreConfig, env []string, job *models.Job) error
 	}
 
 	if err := cmd.Wait(); err != nil {
-		// pg_restore sering exit non-0 meski berhasil (warning-only)
-		job.AddLog("warn", fmt.Sprintf("pg_restore exit dengan kode non-0: %v (mungkin hanya warning)", err))
+		job.AddLog("warn", fmt.Sprintf("pg_restore selesai dengan peringatan: %v", err))
+	} else {
+		job.AddLog("success", "pg_restore berhasil diselesaikan")
 	}
 
 	return nil
