@@ -340,6 +340,53 @@ function updateJobBadge(count) {
     badges.forEach(b => b.textContent = count);
 }
 
+// ── File Browser ───────────────────────────────────────────
+async function loadBackupFiles() {
+    const list = document.getElementById('file-browser-list');
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Memuat file...</div>';
+    
+    try {
+        const res = await fetch(API + '/api/list-files');
+        const files = await res.json();
+        
+        if (!files || files.length === 0) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Tidak ada file backup ditemukan</div>';
+            return;
+        }
+        
+        list.innerHTML = files.map(f => `
+            <div class="file-item" onclick="selectFile('${f.path}')">
+                <div class="file-icon">${ICONS.database}</div>
+                <div class="file-info">
+                    <div class="file-name">${escHtml(f.name)}</div>
+                    <div class="file-meta">${formatBytes(f.size)} • ${new Date(f.time).toLocaleString('id-ID')}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--error)">Gagal memuat file: ${e.message}</div>`;
+    }
+}
+
+function toggleFileBrowser(show) {
+    const modal = document.getElementById('file-browser-modal');
+    modal.style.display = show ? 'flex' : 'none';
+    if (show) loadBackupFiles();
+}
+
+function selectFile(path) {
+    document.getElementById('r-file').value = path;
+    toggleFileBrowser(false);
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 // ── Helpers ─────────────────────────────────────────────────
 function val(id) {
     const el = document.getElementById(id);

@@ -16,9 +16,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o pg_migrate_tool main.go
 # Final Stage
 FROM debian:bookworm-slim
 
-# Install PostgreSQL client tools
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
+# Install PostgreSQL client tools (v17 for universal compatibility with v15, v16, v17)
+RUN apt-get update && apt-get install -y curl gnupg2 lsb-release \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y \
+    postgresql-client-17 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

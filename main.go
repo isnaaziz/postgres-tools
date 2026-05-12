@@ -27,6 +27,7 @@ func main() {
 	mux.HandleFunc("/api/test-conn",     api.HandleTestConn)
 	mux.HandleFunc("/api/jobs",          api.HandleListJobs)
 	mux.HandleFunc("/api/job/",          api.HandleJobStatus)
+	mux.HandleFunc("/api/list-files",    api.HandleListFiles)
 	mux.HandleFunc("/ws/logs",           api.HandleWebSocket)
 
 	// Static files

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/yourusername/pg_migrate_tool/internal/backup"
@@ -13,6 +14,8 @@ import (
 	"github.com/yourusername/pg_migrate_tool/internal/jobs"
 	"github.com/yourusername/pg_migrate_tool/internal/models"
 	"github.com/yourusername/pg_migrate_tool/internal/restore"
+	"os"
+	"path/filepath"
 )
 
 func json200(w http.ResponseWriter, v any) {
@@ -215,6 +218,48 @@ func HandleJobStatus(w http.ResponseWriter, r *http.Request) {
 	json200(w, job)
 }
 
+// GET /api/list-files
+func HandleListFiles(w http.ResponseWriter, r *http.Request) {
+	cors(w)
+	var files []map[string]any
+
+	// Cari di current dir dan subdir 'backups'
+	dirs := []string{".", "backups"}
+	for _, dir := range dirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			ext := filepath.Ext(name)
+			if ext == ".dump" || ext == ".sql" || ext == ".gz" {
+				info, _ := entry.Info()
+				path := name
+				if dir != "." {
+					path = filepath.Join(dir, name)
+				}
+				files = append(files, map[string]any{
+					"name": name,
+					"path": path,
+					"size": info.Size(),
+					"time": info.ModTime(),
+				})
+			}
+		}
+	}
+
+	// Sort by time desc
+	sort.Slice(files, func(i, j int) bool {
+		return files[i]["time"].(time.Time).After(files[j]["time"].(time.Time))
+	})
+
+	json200(w, files)
+}
+
 // WebSocket /ws/logs?job_id=xxx — stream log realtime
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -258,12 +303,12 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Poll setiap 200ms
+		// Tunggu sebentar sebelum polling lagi (mencegah busy loop/CPU 100%)
 		select {
 		case <-r.Context().Done():
 			return
-		default:
-			// sleep minimal tanpa import time package terpisah
+		case <-time.After(200 * time.Millisecond):
+			// lanjut ke loop berikutnya
 		}
 	}
 }
