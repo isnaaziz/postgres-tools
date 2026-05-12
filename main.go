@@ -11,7 +11,7 @@ import (
 	"github.com/yourusername/pg_migrate_tool/internal/api"
 )
 
-//go:embed web/static/*
+//go:embed all:web/static
 var staticFiles embed.FS
 
 func main() {
