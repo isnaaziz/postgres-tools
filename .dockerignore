@@ -1,0 +1,6 @@
+.git
+*.dump
+backups/
+node_modules/
+.DS_Store
+pg_migrate_tool

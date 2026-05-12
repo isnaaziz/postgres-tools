@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    container_name: pg_migrate_tool
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./backups:/app/backups
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Jakarta

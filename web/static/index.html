@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Mumet | PG Migrate Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🐘</div>
+      <div class="logo-text">DATA<span>BASUS</span></div>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="nav-item active" data-page="backup" onclick="showPage('backup')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Backup
+      </a>
+      <a class="nav-item" data-page="restore" onclick="showPage('restore')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        Restore
+      </a>
+      <a class="nav-item" data-page="jobs" onclick="showPage('jobs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+        History Jobs
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="job-count">
+        <span>Active Jobs</span>
+        <span class="job-count-badge">0</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+
+    <!-- Page: Backup -->
+    <div id="page-backup" class="page active">
+      <div class="page-header">
+        <h1 class="page-title">Backup Database</h1>
+        <p class="page-desc">Migrasi schema dan data PostgreSQL ke format dump yang aman.</p>
+      </div>
+
+      <div class="grid">
+        <!-- Source Connection -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            Source Connection
+          </div>
+          <div class="form-group">
+            <label class="form-label">Host & Port</label>
+            <div class="input-row">
+              <input type="text" id="b-host" placeholder="localhost">
+              <input type="text" id="b-port" placeholder="5432">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Credentials</label>
+            <div class="input-row" style="grid-template-columns: 1fr 1fr;">
+              <input type="text" id="b-user" placeholder="user">
+              <input type="password" id="b-password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Database Name</label>
+            <input type="text" id="b-db" placeholder="my_database">
+          </div>
+          <button class="btn btn-outline" onclick="testConn('b')">Test Connection</button>
+          <div id="b-conn-status" class="conn-status"></div>
+        </div>
+
+        <!-- Backup Options -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Backup Settings
+          </div>
+          <div class="form-group">
+            <label class="form-label">Schema Selection</label>
+            <select id="b-schema">
+              <option value="">★ Full Backup (Semua Schema)</option>
+            </select>
+            <div id="b-schema-list" style="margin-top:12px; display:none;">
+              <div id="b-schema-chips" class="schema-grid"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Output Filename</label>
+            <input type="text" id="b-output" placeholder="auto_generated_name.dump">
+          </div>
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0;">
+            <div class="form-group">
+              <label class="form-label">Format</label>
+              <select id="b-format">
+                <option value="custom">Custom (Compressed)</option>
+                <option value="plain">Plain SQL</option>
+                <option value="directory">Directory (Parallel)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Parallel Jobs</label>
+              <input type="number" id="b-jobs" value="4">
+            </div>
+          </div>
+          <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" id="b-timescale" style="width:auto;">
+            <label class="form-label" style="margin:0;">Enable TimescaleDB Support</label>
+          </div>
+          <div id="b-ts-info"
+            style="display:none; padding:10px; background:rgba(59,130,246,0.1); border-radius:var(--radius-sm); font-size:11px; color:var(--accent); margin-bottom:12px;">
+            ⚡ TimescaleDB terdeteksi. Tool akan menangani metadata hypertable secara otomatis.
+          </div>
+          <button id="b-run-btn" class="btn btn-primary" style="width:100%" onclick="runBackup()">💾 Mulai
+            Backup</button>
+        </div>
+      </div>
+
+      <!-- Terminal/Log Panel -->
+      <div class="log-panel">
+        <div class="log-header">
+          <div class="log-title">TERMINAL LOGS</div>
+          <div id="log-job-status" class="job-status-tag" style="display:none"></div>
+        </div>
+        <div id="log-body" class="log-body">
+          <div class="log-empty" style="padding:40px; text-align:center; color:var(--text-muted)">Menunggu job
+            dimulai...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page: Restore -->
+    <div id="page-restore" class="page">
+      <div class="page-header">
+        <h1 class="page-title">Restore Database</h1>
+        <p class="page-desc">Pulihkan database dari file dump ke server target.</p>
+      </div>
+
+      <div class="grid">
+        <!-- Target Connection -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            Target Connection
+          </div>
+          <div class="form-group">
+            <label class="form-label">Host & Port</label>
+            <div class="input-row">
+              <input type="text" id="r-host" placeholder="localhost">
+              <input type="text" id="r-port" placeholder="5432">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Credentials</label>
+            <div class="input-row" style="grid-template-columns: 1fr 1fr;">
+              <input type="text" id="r-user" placeholder="user">
+              <input type="password" id="r-password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Database</label>
+            <input type="text" id="r-db" placeholder="target_db">
+          </div>
+          <button class="btn btn-outline" onclick="testConn('r')">Test Connection</button>
+          <div id="r-conn-status" class="conn-status"></div>
+        </div>
+
+        <!-- Restore Options -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Restore Settings
+          </div>
+          <div class="form-group">
+            <label class="form-label">Source Backup File</label>
+            <input type="text" id="r-file" placeholder="/path/to/backup.dump">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Schema (Opsional)</label>
+            <input type="text" id="r-schema" placeholder="Biarkan kosong untuk full restore">
+          </div>
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0;">
+            <div class="form-group">
+              <label class="form-label">Parallel Jobs</label>
+              <input type="number" id="r-jobs" value="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Src PG Version</label>
+              <input type="text" id="r-src-version" placeholder="Contoh: 16.3">
+            </div>
+          </div>
+          <div class="form-group" style="display:flex; flex-direction:column; gap:8px;">
+            <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="r-timescale" style="width:auto;">
+              Restore as TimescaleDB
+            </label>
+            <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="r-create-db" style="width:auto;">
+              Create DB if not exists
+            </label>
+          </div>
+          <button id="r-run-btn" class="btn btn-primary" style="width:100%" onclick="runRestore()">🚀 Mulai
+            Restore</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page: Jobs History -->
+    <div id="page-jobs" class="page">
+      <div class="page-header">
+        <h1 class="page-title">History Jobs</h1>
+        <p class="page-desc">Daftar semua proses backup dan restore yang pernah dijalankan.</p>
+      </div>
+
+      <div id="jobs-list">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
