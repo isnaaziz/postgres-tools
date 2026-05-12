@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Status mewakili status dari sebuah job
 type Status string
 
 const (
@@ -14,17 +13,15 @@ const (
 	StatusFailed  Status = "failed"
 )
 
-// LogLine menyimpan satu baris log dalam job
 type LogLine struct {
 	Time    time.Time `json:"time"`
-	Level   string    `json:"level"` // info | warn | error | success
+	Level   string    `json:"level"`
 	Message string    `json:"message"`
 }
 
-// Job merepresentasikan tugas backup atau restore
 type Job struct {
 	ID        string     `json:"id"`
-	Type      string     `json:"type"` // backup | restore
+	Type      string     `json:"type"`
 	DB        string     `json:"db"`
 	Schema    string     `json:"schema"`
 	File      string     `json:"file"`
@@ -38,11 +35,7 @@ type Job struct {
 func (j *Job) AddLog(level, msg string) {
 	j.Mu.Lock()
 	defer j.Mu.Unlock()
-	j.Logs = append(j.Logs, LogLine{
-		Time:    time.Now(),
-		Level:   level,
-		Message: msg,
-	})
+	j.Logs = append(j.Logs, LogLine{Time: time.Now(), Level: level, Message: msg})
 }
 
 func (j *Job) Finish(success bool) {
@@ -50,29 +43,23 @@ func (j *Job) Finish(success bool) {
 	defer j.Mu.Unlock()
 	now := time.Now()
 	j.EndedAt = &now
-	if success {
-		j.Status = StatusDone
-	} else {
-		j.Status = StatusFailed
-	}
+	if success { j.Status = StatusDone } else { j.Status = StatusFailed }
 }
 
-// BackupConfig konfigurasi untuk proses backup
 type BackupConfig struct {
 	Host       string
 	Port       string
 	User       string
 	Password   string
 	DB         string
-	Schema     string // kosong = full backup
+	Schema     string
 	OutputFile string
-	Format     string // custom | plain | directory
-	Jobs       int    // paralel jobs
-	Compress   int    // 0-9
+	Format     string
+	Jobs       int
+	Compress   int
 	Timescale  bool
 }
 
-// RestoreConfig konfigurasi untuk proses restore
 type RestoreConfig struct {
 	Host       string
 	Port       string
@@ -84,10 +71,8 @@ type RestoreConfig struct {
 	Jobs       int
 	Timescale  bool
 	CreateDB   bool
-	SrcVersion string // opsional, untuk logging
+	SrcVersion string
 }
-
-// --- API Request/Response Models ---
 
 type TestConnRequest struct {
 	Host     string `json:"host"`

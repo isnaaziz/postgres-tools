@@ -3,12 +3,10 @@ package jobs
 import (
 	"sync"
 	"time"
-
 	"github.com/google/uuid"
 	"github.com/yourusername/pg_migrate_tool/internal/models"
 )
 
-// Store adalah registry global untuk semua job
 type Store struct {
 	mu   sync.RWMutex
 	jobs map[string]*models.Job
@@ -44,8 +42,6 @@ func (s *Store) All() []*models.Job {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	list := make([]*models.Job, 0, len(s.jobs))
-	for _, j := range s.jobs {
-		list = append(list, j)
-	}
+	for _, j := range s.jobs { list = append(list, j) }
 	return list
 }
