@@ -78,7 +78,7 @@ func runPgRestore(cfg models.RestoreConfig, env []string, job *models.Job) error
 		"-v",
 		"--no-owner", // agar tidak gagal karena beda owner
 		"--no-acl",   // skip permission jika lintas env
-		"--exit-on-error",
+		// "--exit-on-error", // Dihapus agar tidak gagal saat ada perbedaan parameter config (seperti transaction_timeout di PG17)
 	}
 
 	if cfg.Jobs > 1 {
